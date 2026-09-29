@@ -100,12 +100,56 @@ pnpm preview
 
 ![Neon Snake data flow: the game sends events to the analytics API, which stores them in the SQL Connect emulator and serves them to the dashboard](docs/architecture-flow.png)
 
+The test follows one piece of data from start to end: you play the game, the game sends events to the API, the API stores them in the database, and the dashboard shows them.
+
+### Step 1: Start everything
+
 ```bash
-curl http://127.0.0.1:3001/api/sessions
+pnpm start
 ```
 
-5. Open the dashboard at `http://localhost:5180`. Your sessions appear in the overview, the charts, and the recent sessions table.
-6. Optionally run `pnpm --dir backend seed` and switch between the 7 and 30 day ranges to see four weeks of data.
+Wait until the terminal shows lines from all four parts (`db`, `api`, `game`, `dash`). The API prints `API listening on http://127.0.0.1:3001` when it is ready.
+
+### Step 2: Play the game
+
+Open `http://localhost:5173` and play a few runs. To get useful data, try to create each kind of ending:
+
+- Finish level 1 (the run ends as **complete**).
+- Hit a wall or yourself (the run ends as **fail**).
+- Pause and choose **Exit to menu** (the run ends as **quit**, and the session ends).
+
+### Step 3: See the events leave the game
+
+Open the browser's developer tools and go to the **Network** tab. Every time something happens in the game, you will see a `POST /api/events` request:
+
+| Game moment | Event sent |
+| --- | --- |
+| A run starts | `runStarted` |
+| The snake eats fruit | `scoreChanged` and `progressChanged` |
+| The run ends | `runEnded` |
+| You leave to the menu or finish the game | `sessionEnded` |
+
+A successful request returns status `201`. If the API rejects an event, the **Console** tab shows an error that starts with `[analytics]`.
+
+### Step 4: See the data in the dashboard
+
+Open `http://localhost:5180`. The runs you just played appear in:
+
+- the overview numbers (sessions, runs, finish rate, best score),
+- the "Outcomes by level" and "How far sessions get" charts,
+- the recent sessions table at the bottom.
+
+Play one more run and reload the dashboard. The numbers go up by one run.
+
+### Step 5: Try it with more data (optional)
+
+A few runs are not enough to make the charts interesting. While everything is running, add 36 sample sessions spread over the last four weeks:
+
+```bash
+pnpm --dir backend seed
+```
+
+Reload the dashboard and switch between **Last 7 days** and **Last 30 days**. The loader appears while the new range is loading, and the numbers change because the API only returns sessions that started inside the chosen range.
 
 ## 3. Main technical decisions
 
