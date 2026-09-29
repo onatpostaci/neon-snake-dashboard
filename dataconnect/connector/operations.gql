@@ -1,0 +1,104 @@
+query SessionHead($id: UUID!) @auth(level: NO_ACCESS) {
+  session(id: $id) {
+    id
+    endedAt
+    runs: runs_on_session {
+      id
+      endedAt
+    }
+  }
+}
+
+query ListSessions($from: Timestamp!, $limit: Int!) @auth(level: NO_ACCESS) {
+  sessions(where: { startedAt: { ge: $from } }, orderBy: [{ startedAt: DESC }], limit: $limit) {
+    id
+    startedAt
+    endedAt
+    outcome
+    runs: runs_on_session(orderBy: [{ startedAt: ASC }]) {
+      id
+      level
+      startedAt
+      endedAt
+      outcome
+      score
+      progress
+      durationMs
+    }
+  }
+}
+
+query GetSession($id: UUID!) @auth(level: NO_ACCESS) {
+  session(id: $id) {
+    id
+    startedAt
+    endedAt
+    outcome
+    runs: runs_on_session(orderBy: [{ startedAt: ASC }]) {
+      id
+      level
+      startedAt
+      endedAt
+      outcome
+      score
+      progress
+      durationMs
+      scoreChanges: scoreChanges_on_run(orderBy: [{ occurredAt: ASC }]) {
+        occurredAt
+        score
+        delta
+      }
+      progressChanges: progressChanges_on_run(orderBy: [{ occurredAt: ASC }]) {
+        occurredAt
+        progress
+        collected
+        target
+      }
+    }
+  }
+}
+
+mutation InsertSession($id: UUID!, $startedAt: Timestamp!) @auth(level: NO_ACCESS) {
+  session_insert(data: { id: $id, startedAt: $startedAt })
+}
+
+mutation InsertRun($id: UUID!, $sessionId: UUID!, $level: Int!, $startedAt: Timestamp!) @auth(level: NO_ACCESS) {
+  run_insert(data: { id: $id, session: { id: $sessionId }, level: $level, startedAt: $startedAt })
+}
+
+mutation RecordScore($runId: UUID!, $occurredAt: Timestamp!, $score: Int!, $delta: Int!) @auth(level: NO_ACCESS) {
+  scoreChange_insert(data: { run: { id: $runId }, occurredAt: $occurredAt, score: $score, delta: $delta })
+  run_update(key: { id: $runId }, data: { score: $score })
+}
+
+mutation RecordProgress(
+  $runId: UUID!
+  $occurredAt: Timestamp!
+  $progress: Float!
+  $collected: Int!
+  $target: Int!
+) @auth(level: NO_ACCESS) {
+  progressChange_insert(
+    data: { run: { id: $runId }, occurredAt: $occurredAt, progress: $progress, collected: $collected, target: $target }
+  )
+  run_update(key: { id: $runId }, data: { progress: $progress })
+}
+
+mutation EndRun(
+  $id: UUID!
+  $level: Int!
+  $endedAt: Timestamp!
+  $outcome: RunOutcome!
+  $score: Int!
+  $progress: Float!
+  $durationMs: Int!
+) @auth(level: NO_ACCESS) {
+  run_update(
+    key: { id: $id }
+    data: { level: $level, endedAt: $endedAt, outcome: $outcome, score: $score, progress: $progress, durationMs: $durationMs }
+  )
+}
+
+mutation EndSession($id: UUID!, $endedAt: Timestamp!, $outcome: SessionOutcome!) @auth(level: NO_ACCESS) {
+  session_update(key: { id: $id }, data: { endedAt: $endedAt, outcome: $outcome })
+}

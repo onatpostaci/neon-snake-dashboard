@@ -1,0 +1,13 @@
+specVersion: "v1"
+serviceId: neon-snake-5ed83-service
+location: europe-west3
+schema:
+  source: ./schema
+  datasource:
+    postgresql:
+      database: neon-snake-5ed83-database
+      cloudSql:
+        instanceId: neon-snake-5ed83-instance
+        schemaValidation: COMPATIBLE
+connectorDirs:
+  - ./connector

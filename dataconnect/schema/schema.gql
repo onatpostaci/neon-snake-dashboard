@@ -1,0 +1,46 @@
+enum SessionOutcome {
+  QUIT
+  FINISHED
+}
+
+enum RunOutcome {
+  COMPLETE
+  FAIL
+  QUIT
+}
+
+type Session @table(name: "sessions", key: "id") {
+  id: UUID!
+  startedAt: Timestamp!
+  endedAt: Timestamp
+  outcome: SessionOutcome
+}
+
+type Run @table(name: "runs", key: "id") {
+  id: UUID!
+  session: Session!
+  level: Int!
+  startedAt: Timestamp!
+  endedAt: Timestamp
+  outcome: RunOutcome
+  score: Int
+  progress: Float
+  durationMs: Int
+}
+
+type ScoreChange @table(name: "score_changes") {
+  id: UUID! @default(expr: "uuidV4()")
+  run: Run!
+  occurredAt: Timestamp!
+  score: Int!
+  delta: Int!
+}
+
+type ProgressChange @table(name: "progress_changes") {
+  id: UUID! @default(expr: "uuidV4()")
+  run: Run!
+  occurredAt: Timestamp!
+  progress: Float!
+  collected: Int!
+  target: Int!
+}

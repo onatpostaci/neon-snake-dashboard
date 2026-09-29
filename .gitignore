@@ -3,3 +3,6 @@ dist/
 .DS_Store
 *.local
 *.log
+.env
+*firebase-adminsdk*.json
+dataconnect/.dataconnect/

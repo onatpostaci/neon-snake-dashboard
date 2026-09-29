@@ -4,7 +4,12 @@
   "description": "A small browser game starter for the Famobi development challenge.",
   "type": "module",
   "scripts": {
+    "install:all": "pnpm install && pnpm --dir backend install && pnpm --dir frontend install",
+    "start": "concurrently --kill-others-on-fail --names db,api,game,dash --prefix-colors magenta,blue,green,cyan \"pnpm emulators\" \"pnpm backend\" \"pnpm dev\" \"pnpm frontend\"",
     "dev": "vite",
+    "emulators": "firebase emulators:start --only dataconnect --project demo-neon-snake",
+    "backend": "pnpm --dir backend dev",
+    "frontend": "pnpm --dir frontend dev",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check": "tsc --noEmit"
@@ -13,6 +18,8 @@
     "phaser": "3.90.0"
   },
   "devDependencies": {
+    "concurrently": "^10.0.5",
+    "firebase-tools": "^15.18.0",
     "typescript": "^7.0.2",
     "vite": "^8.1.5"
   },

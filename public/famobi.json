@@ -1,0 +1,14 @@
+{
+  "ads": {
+    "interstitial": {
+      "eventIds": []
+    },
+    "rewarded": {
+      "eventIds": []
+    }
+  },
+  "iap": {
+    "products": []
+  },
+  "maxLevels": 3
+}

@@ -2,6 +2,8 @@ import './style.css';
 
 import Phaser from 'phaser';
 
+import { GameplayAnalytics } from './analytics/GameplayAnalytics';
+import { HttpGameplayAnalytics } from './analytics/HttpGameplayAnalytics';
 import { GameController } from './application/GameController';
 import { LocalGameStorage } from './core/storage/GameStorage';
 import { SnakeScene } from './game/scenes/SnakeScene';
@@ -31,8 +33,32 @@ const levelSelect = requiredElement<HTMLElement>('#level-select');
 
 const simulation = new SnakeGame();
 const controller = new GameController(simulation, new LocalGameStorage());
+const analytics = new GameplayAnalytics(controller.events, new HttpGameplayAnalytics(), () => controller.getSnapshot());
 const snakeScene = new SnakeScene(controller);
 let currentSnapshot = controller.getSnapshot();
+
+console.log("[test] game started");
+
+type FamobiWindow = Window & {
+  GameInterface: {
+    sendPreloadProgress: (progress: number) => void;
+  };
+};
+
+const reportPreloadProgress = (() => {
+  let lastReported = -1;
+
+  return (progress: number) => {
+    const value = Math.min(100, Math.max(0, Math.round(progress)));
+    if (value === lastReported) return;
+
+    lastReported = value;
+    (window as unknown as FamobiWindow).GameInterface.sendPreloadProgress(value);
+    console.log(`[test] preload ${value}`);
+  };
+})();
+
+reportPreloadProgress(0);
 
 const phaserGame = new Phaser.Game({
   type: Phaser.AUTO,
@@ -49,6 +75,10 @@ const phaserGame = new Phaser.Game({
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH
   }
+});
+
+phaserGame.events.once(Phaser.Core.Events.READY, () => {
+  reportPreloadProgress(100);
 });
 
 const failureCopy: Record<NonNullable<GameSnapshot['failureReason']>, string> = {
@@ -197,6 +227,7 @@ levelSelect.querySelectorAll<HTMLButtonElement>('[data-level]').forEach((button)
 });
 
 window.addEventListener('beforeunload', () => {
+  analytics.leaveOpenRun();
   controller.dispose();
   phaserGame.destroy(true);
 });
